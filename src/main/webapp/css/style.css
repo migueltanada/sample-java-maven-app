@@ -1,0 +1,46 @@
+
+
+html, body {
+  font-size: 62.5%;
+  height: 100%;
+  overflow: hidden;
+}
+@media (max-width: 768px) {
+  html, body {
+    font-size: 50%;
+  }
+}
+
+
+input, button {
+  outline: none;
+  border: none;
+}
+
+.cont {
+  position: relative;
+  height: 100%;
+  background-image: url("https://static1.squarespace.com/static/588bb37b893fc0698d8db5f6/588bb4013a041194fc7b8ecb/588bbe80f7e0ab745badbf97/1488919629350/getintodevops-banner.png?format\x3d2500w");
+  background-size: cover;
+  overflow: auto;
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
+}
+.design {
+  position: relative;
+  height: 100%;
+  background: -webkit-gradient(top, rgba(146, 135, 187, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+  background: -webkit-linear-gradient(top bottom, rgba(146, 135, 187, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+    background: -ms-linear-gradient(top, #1e5799 0%,#7db9e8 100%);
+      background: -moz-linear-gradient(top, #1e5799 0%, #7db9e8 100%);
+       background: -o-linear-gradient(top, #1e5799 0%,#7db9e8 100%);
+}
+.designForm {
+	box-sizing:border-box;
+  position: absolute;
+  top: 13%;
+  left: 0;
+  width: 100%;
+  height: 16%;
+  padding: 2.5rem 2.5rem;
+  text-align: center;
+}
