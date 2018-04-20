@@ -1,36 +1,48 @@
-def mvnHome
-
 node('master'){
-    mvnHome = tool 'ADOP Maven'
-    
-	stage('Clone Git Repo'){
-        def workspace = pwd()
-             sh """
-                git config --global http.postBuffer 524288000
-                git init ${workspace}
-                git config remote.origin.url http://gitlab/gitlab/${env.gitlabSourceRepoName}
-                git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-                git fetch --no-tags --progress http://gitlab/gitlab/root/jenkins-gitlab-sonarqube.git +refs/heads/*:refs/remotes/origin/*
-                git checkout ${env.gitlabSourceBranch}
-                """ 
+
+    def mavenHome = tool(
+        name: "ADOP Maven",
+        type: "maven"
+    )
+    def sonarScanner = tool 'ADOP Sonar'
+
+	stage('Checkout'){
+		checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/migueltanada/sample-java-maven-app']]])
 	}
     
-	stage('sonar preview'){
-		sh """
-		${mvnHome}/bin/mvn --batch-mode sonar:sonar \
-		-Dsonar.gitlab.ref_name=${env.gitlabSourceBranch} \
-		-Dsonar.gitlab.project_id=${env.gitlabSourceRepoHttpUrl} \
-		-Dsonar.gitlab.commit_sha=${env.gitlabMergeRequestLastCommit} \
-		-Dsonar.analysis.mode=preview \
-		-Dsonar.gitlab.only_issue_from_commit_file=true \
-		-Dsonar.login= \
-			-Dsonar.password= \
-			-Dsonar.host.url=http://sonar:9000/sonar \
-			-Dsonar.jdbc.url='jdbc:mysql://sonar-mysql:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true' \
-			-Dsonar.jdbc.username=sonar \
-			-Dsonar.jdbc.password=sonar \
-			-Dsonar.scm.enabled=false \
-			-Dsonar.scm-stats.enabled=false \
-			-Dissueassignplugin.enabeld=false"""      
+	stage('maven'){
+		env.PATH = "${env.PATH}:${mavenHome}/bin"
+		sh "mvn package"	    
 	}
+	
+	withCredentials([usernamePassword(credentialsId: 'ADMIN_CREDS', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
+		stage('sonar'){
+			env.PATH = "${env.PATH}:${mavenHome}/bin"
+
+			sh """
+			mvn --batch-mode sonar:sonar \
+				-Dsonar.login=${ADMIN_USER} \
+				-Dsonar.password=${ADMIN_PASSWORD} \
+				-Dsonar.host.url=http://sonar:9000/sonar \
+				-Dsonar.jdbc.url='jdbc:mysql://sonar-mysql:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true' \
+				-Dsonar.jdbc.username=sonar \
+				-Dsonar.jdbc.password=sonar \
+			"""
+		}
+
+		stage('nexus'){
+			env.PATH = "${env.PATH}:${mavenHome}/bin"
+			
+			sh """
+			mvn deploy:deploy-file \
+				-DgeneratePom=false \
+				-DrepositoryId=nexus \
+				-Durl=http://${ADMIN_USER}:${ADMIN_PASSWORD}@nexus:8081/nexus/content/repositories/snapshots \
+				-DpomFile=pom.xml \
+				-Dfile=target/CurrencyConverter.war
+			"""
+		}
+	}
+
 } 
+ 
