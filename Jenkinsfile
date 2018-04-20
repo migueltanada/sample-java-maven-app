@@ -1,4 +1,4 @@
-node('master'){
+node('docker'){
 
     def mavenHome = tool(
         name: "ADOP Maven",
