@@ -1,5 +1,5 @@
 // Admin Credentials for sonar and nexus (username and Password)
-docker_creds = "DOCKER_LOGIN"
+//docker_creds = "DOCKER_LOGIN"
 
 // DockerHub Credentials (username and Password)
 admin_creds = "ADMIN_CREDS"
@@ -92,7 +92,7 @@ node('docker'){
         // Copy war
         sh "mv target/CurrencyConverter.war currencyconverter.war"
         
-        withCredentials([usernamePassword(credentialsId: docker_creds, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+        //withCredentials([usernamePassword(credentialsId: docker_creds, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
     
             /*
              * Build Image
@@ -101,19 +101,34 @@ node('docker'){
              * Add to Proxy
              * Reload Proxy
              */
+            // sh """
+            // #!/bin/bash
+            // set +x
+            // docker build -t ${DOCKER_USER}/currency-ci:${env.BUILD_ID} .
+
+            // docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+            // docker push ${DOCKER_USER}/currency-ci:${env.BUILD_ID}
+            // docker logout
+
+            // if [ "\$(docker ps --format {{.Names}} | grep -w tomcat)" != "" ];then
+            //     docker rm -f tomcat
+            // fi
+            // docker run -it -d -p 8080:8080 --net adop-network --name tomcat ${DOCKER_USER}/currency-ci:${env.BUILD_ID} 
+
+            // docker cp tomcat.conf proxy:/resources/configuration/sites-enabled/
+            // docker cp tomcat.conf proxy:/etc/nginx/sites-enabled/
+
+            // docker restart proxy
+            // """
             sh """
             #!/bin/bash
             set +x
-            docker build -t ${DOCKER_USER}/currency-ci:${env.BUILD_ID} .
+            docker build -t currency-ci:${env.BUILD_ID} .
 
-            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-            docker push ${DOCKER_USER}/currency-ci:${env.BUILD_ID}
-            docker logout
-
-            if [ "\$(docker ps --format {{.Names}} | grep -w tomcat)" != "" ];then
+            if [ "\$(docker ps -a --format {{.Names}} | grep -w tomcat)" != "" ];then
                 docker rm -f tomcat
             fi
-            docker run -it -d -p 8080:8080 --net adop-network --name tomcat ${DOCKER_USER}/currency-ci:${env.BUILD_ID} 
+            docker run -it -d -p 8080:8080 --net docker-network --name tomcat currency-ci:${env.BUILD_ID} 
 
             docker cp tomcat.conf proxy:/resources/configuration/sites-enabled/
             docker cp tomcat.conf proxy:/etc/nginx/sites-enabled/
@@ -127,13 +142,12 @@ node('docker'){
 
             print """\
             |======================================================================================================"
-            |Image can be found here: https://hub.docker.com/r/${DOCKER_USER}/currency-ci/tags/
             |Tag number: ${env.BUILD_ID}
             |Sonar Report is at "http://${pub_ip}/sonar/dashboard?id=sim%3ACurrencyConverter"
             |War is located at: http://${pub_ip}/nexus/#view-repositories;snapshots~browsestorage
             |visit converter at: http://tomcat.${pub_ip}.xip.io/currencyconverter/
             |======================================================================================================""".stripMargin()
-        }
+        //}
         
     }
 	// TODO add selenium Test
