@@ -1,4 +1,6 @@
 node{
+	// stages = boxes represented in pipeline script
+	// see: https://wiki.jenkins.io/display/JENKINS/Pipeline+Stage+View+Plugin
 	stage('Checkout'){
 		// Clone the repository
 		checkout([$class: 'GitSCM',
@@ -12,8 +14,8 @@ node{
 		sh "mvn package"	    
 	}
 	stage('sonar'){
-		// Run sonar
-		sh "mvn e sonar:sonar"
+		// Run sonarqube code analysis
+		sh "mvn sonar:sonar"
 	}
     	
 	stage('nexus'){
@@ -24,14 +26,14 @@ node{
     
     
 	stage('Deploy'){
-		// Create Dockerfile
+		// Create Dockerfile 
 		writeFile file: 'Dockerfile', text: '''\
 		    |FROM tomcat:7.0 # Use tomcat 7.0 Docker Image
 		    |ADD target/currencyconverter.war /usr/local/tomcat/webapps/ # copy built war from target folder to webapps folder
 		    '''.stripMargin()
 
 		sh """#!/bin/bash
-		# Build DOcker Image
+		# Build Docker Image
 		docker build -t ${DOCKER_USER}/currency-ci:latest .
 		
 		# Run Docker Image
